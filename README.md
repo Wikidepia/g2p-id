@@ -4,6 +4,8 @@
 
 ## Mapping table
 
+Most of Indonesian letters are mapped to a similar phonemes. Except "e" and "o", which can be mapped to "ê", "è" and "o", "ô".
+
 This table originally comes from [epitrain](https://github.com/dmort27/epitran) with some modifications.
 
 | Letter | Phoneme | Notes     |
