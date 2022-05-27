@@ -30,12 +30,14 @@ class G2P:
                 pron = self.dict[word]
             elif "e" not in word or re.search("[a-z]", word) is None:
                 pron = word
+            elif "e" in word: # TODO: handle oov word
+                pron = word.replace("e", "ê")
 
             # Get "IPA" pronunciation
-            if pron[0] == "x":
-                pron[0] = "s"
-            elif pron[-1] == "k":
-                pron[0] = "'"
+            if pron.startswith("x"):
+                pron = re.sub(r"^x", "s", pron)
+            elif pron.endswith("k"):
+                pron = re.sub(r"k$", "'", pron)
 
             if re.search("[a-z]", word) is not None:
                 for char in self.map:
