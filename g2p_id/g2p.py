@@ -28,7 +28,7 @@ class G2P:
             # Get PUEBI pronunciation
             if word in self.dict:
                 pron = self.dict[word]
-            elif "e" not in word or re.search("[a-z]", word) is None:
+            elif "e" not in word or not word.isalpha():
                 pron = word
             elif "e" in word: # TODO: handle oov word
                 pron = word.replace("e", "ê")
@@ -39,7 +39,7 @@ class G2P:
             elif pron.endswith("k"):
                 pron = re.sub(r"k$", "'", pron)
 
-            if re.search("[a-z]", word) is not None:
+            if word.isalpha():
                 for char in self.map:
                     pron = pron.replace(char, self.map[char])
 
