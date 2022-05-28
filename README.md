@@ -1,4 +1,4 @@
-# Indonesian Phonemes
+# Indonesian Grapheme-to-Phoneme
 
 > Indonesian Grapheme-to-Phoneme
 
@@ -42,4 +42,4 @@ This table originally comes from [epitrain](https://github.com/dmort27/epitran) 
 | ng     | ŋ       |           |
 | '      | ʔ       |           |
 | sy     | ʃ       |           |
-| kh     | kʰ      | Temporary |
+| kh     | kʰ      | kʰ or x   |
