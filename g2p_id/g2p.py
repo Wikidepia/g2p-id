@@ -2,6 +2,8 @@ import json
 import os
 import re
 
+import torch
+from dp.phonemizer import Phonemizer
 from nltk.tokenize import TweetTokenizer
 
 word_tokenize = TweetTokenizer().tokenize
@@ -18,9 +20,14 @@ class G2P:
         with open(map_path) as f:
             self.map = json.load(f)
 
+        model_path = os.path.join(dirname, "id_kbbi_autoreg.pt")
+        self.phonemizer = Phonemizer.from_checkpoint(model_path)
+        model = self.phonemizer.predictor.model
+        self.phonemizer.predictor.model = torch.jit.script(model)
+
     def __call__(self, text):
         text = text.lower()
-        text = re.sub("[^ a-z'.,?!\-]", "", text)
+        text = re.sub(r"[^ a-z'\.,?!-]", "", text)
 
         prons = []
         words = word_tokenize(text)
@@ -30,8 +37,8 @@ class G2P:
                 pron = self.dict[word]
             elif "e" not in word or not word.isalpha():
                 pron = word
-            elif "e" in word: # TODO: handle oov word
-                pron = word.replace("e", "ê")
+            elif "e" in word:
+                pron = self.phonemizer(word, lang="id")
 
             # Get "IPA" pronunciation
             if pron.startswith("x"):
