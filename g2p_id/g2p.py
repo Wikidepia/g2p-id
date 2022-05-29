@@ -26,8 +26,7 @@ class Predictor:
         indices, _ = self.session.run(None, {"text": [text]})
 
         output = indices[0]
-        (stop_len,) = np.where(output == self.phoneme_vocab.index("[END]"))
-        prediction = output[1 : stop_len[0]].tolist()
+        prediction = output[1 : len(word)].tolist()
         return "".join([self.phoneme_vocab[i] for i in prediction])
 
 
