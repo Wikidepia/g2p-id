@@ -1,10 +1,12 @@
 # Indonesian Grapheme-to-Phoneme
 
-> Indonesian Grapheme-to-Phoneme
+This module is designed to convert Indonesian grapheme (spelling) to phonemes (pronunciation). Luckiliy, most of Indonesian word pronounciation can be inferred from its spelling. However there are some exceptions. For example, there are two(?) different way to pronounce "e": "è" as in "lelet" and "ê" as in "enam".
 
-## Mapping table
+## Installation
 
-Most of Indonesian letters are mapped to a similar phonemes. Except "e" and "o", which can be mapped to "ê", "è" and "o", "ô".
+`pip3 install -U git+https://github.com/Wikidepia/g2p-id`
+
+## Mapping Table
 
 This table originally comes from [epitrain](https://github.com/dmort27/epitran) with some modifications.
 
