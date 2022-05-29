@@ -1,0 +1,21 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="g2p-id",
+    packages=find_packages(exclude=[]),
+    version="0.0.3",
+    license="MIT",
+    description="Indonesian Grapheme-to-Phoneme (G2P)",
+    author="Akmal",
+    author_email="magchuz@pm.me",
+    long_description_content_type="text/markdown",
+    url="https://github.com/Wikidepia/g2p-id",
+    install_requires=["nltk>=3.7", "numpy>=1.22.4", "onnxruntime>=1.11.1"],
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.6",
+    ],
+    include_package_data=True,
+)
