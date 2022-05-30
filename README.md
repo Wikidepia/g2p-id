@@ -45,3 +45,8 @@ This table originally comes from [epitrain](https://github.com/dmort27/epitran) 
 | '      | ʔ       |           |
 | sy     | ʃ       |           |
 | kh     | kʰ      | kʰ or x   |
+
+## TODO
+
+- [ ] Better model for predicting "e"
+- [ ] Handle homograph
