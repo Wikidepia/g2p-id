@@ -8,26 +8,55 @@ from nltk.tokenize import TweetTokenizer
 
 from .syllable_splitter import SyllableSplitter
 
+PHONETIC_MAPPING = {
+    "kh": "kʰ",  # Easier than "x"
+    "sy": "ʃ",
+    "ny": "ɲ",
+    "ng": "ŋ",
+    "dj": "dʒ",
+    "'": "ʔ",
+    "c": "tʃ",
+    "è": "ɛ",
+    "ê": "ə",
+    "j": "dʒ",
+    "ô": "ɔ",
+    "q": "k",
+    "v": "f",
+    "x": "ks",
+    "y": "j",
+}
+
 word_tokenize = TweetTokenizer().tokenize
 dirname = os.path.dirname(__file__)
 
-
+# Predict pronounciation with BERT Masking
+# Read more: https://w11wo.github.io/posts/2022/04/predicting-phonemes-with-bert/
 class Predictor:
     def __init__(self, model_path):
         # fmt: off
-        self.text_vocab = ["[PAD]", "[START]", "[END]", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-        self.phoneme_vocab = ["[PAD]", "[START]", "[END]", 'a', 'b', 'c', 'd', 'ê', 'è', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+        self.vocab = ['', '[UNK]', 'a', 'è', 'i', 'ê', 'n', 'r', 's', 't', 'o', 'k', 'l', 'm', 'g', 'p', 'u', 'd', 'b', 'f', 'h', 'c', 'j', 'v', 'w', 'y', '-', 'z', '.', 'x', 'q', '[mask]']
+        self.mask_token_id = self.vocab.index("[mask]")
         # fmt: on
         self.session = onnxruntime.InferenceSession(model_path)
 
     def predict(self, word):
-        text = [1] + [self.text_vocab.index(c) for c in word] + [2]
-        text.extend([0] * (28 - len(text)))  # Pad to 28 tokens
-        indices, _ = self.session.run(None, {"text": [text]})
+        text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
+        text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
+        input_1 = np.array([text])
+        (predictions,) = self.session.run(None, {"input_1": input_1})
 
-        output = indices[0]
-        prediction = output[1 : len(word)].tolist()
-        return "".join([self.phoneme_vocab[i] for i in prediction])
+        # find masked idx token
+        _, masked_index = np.where(input_1 == self.mask_token_id)
+
+        # get prediction at those masked index only
+        mask_prediction = predictions[0][masked_index]
+        predicted_ids = np.argmax(mask_prediction, axis=1)
+
+        # replace mask with predicted token
+        for i, idx in enumerate(masked_index):
+            text[idx] = predicted_ids[i]
+
+        return "".join([self.vocab[i] for i in text if i != 0])
 
 
 class G2P:
@@ -36,11 +65,7 @@ class G2P:
         with open(dict_path) as f:
             self.dict = json.load(f)
 
-        map_path = os.path.join(dirname, "data/map.json")
-        with open(map_path) as f:
-            self.map = json.load(f)
-
-        model_path = os.path.join(dirname, "tiny-pron.onnx")
+        model_path = os.path.join(dirname, "bert_pron.onnx")
         self.predictor = Predictor(model_path)
 
         self.syllable_splitter = SyllableSplitter()
@@ -48,7 +73,8 @@ class G2P:
     def __call__(self, text):
         text = text.lower()
         text = re.sub(r"[^ a-z'\.,?!-]", "", text)
-
+        text = text.replace("-", " ")
+    
         prons = []
         words = word_tokenize(text)
         for word in words:
@@ -61,23 +87,28 @@ class G2P:
                 pron = self.predictor.predict(word)
 
             # [ALOFON] o or ô
-            if "o" in word:
+            # [HOMOFON] nk => ng
+            if "o" in word or "nk" in word:
                 sylls = self.syllable_splitter.split_syllables(pron)
                 for i, syll in enumerate(sylls):
-                    if "o" in syll:
-                        if syll[-1] != "o":  # Posisi tertutup
-                            sylls[i] = syll.replace("o", "ô")
+                    # [ALOFON] o or ô
+                    if syll[-1] != "o":  # Posisi tertutup
+                        sylls[i] = syll.replace("o", "ô")
+                    # [HOMOFON] nk => ng
+                    if syll.endswith("nk"):
+                        sylls[i] = syll[:-2] + "ng"
                 pron = "".join(sylls)
 
             # "IPA" pronunciation
             if pron.startswith("x"):
                 pron = re.sub(r"^x", "s", pron)
-            elif pron.endswith("k"):
+            if pron.endswith("k"):
                 pron = re.sub(r"k$", "'", pron)
 
+            # Apply phonetic mapping
             if word.isalpha():
-                for char in self.map:
-                    pron = pron.replace(char, self.map[char])
+                for g, p in PHONETIC_MAPPING.items():
+                    pron = pron.replace(g, p)
 
             prons.append(pron)
             prons.append(" ")

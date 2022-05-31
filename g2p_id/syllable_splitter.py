@@ -40,7 +40,7 @@ class SyllableSplitter:
                 "th",
             ]
         )
-        self.double_consonant = set(["ll", "ks", "rs", "rt"])
+        self.double_consonant = set(["ll", "ks", "rs", "rt", "nk"])
         self.vocal = set(["a", "e", "i", "o", "u"])
 
     def split_letters(self, string):
