@@ -1,3 +1,2 @@
 include g2p_id/data/dict.json
-include g2p_id/data/map.json
-include g2p_id/tiny-pron.onnx
+include g2p_id/bert_pron.onnx

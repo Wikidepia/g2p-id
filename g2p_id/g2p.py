@@ -4,7 +4,7 @@ import re
 
 import numpy as np
 import onnxruntime
-from nltk.tokenize import TweetTokenizer
+from sacremoses import MosesDetokenizer, MosesTokenizer
 
 from .syllable_splitter import SyllableSplitter
 
@@ -26,7 +26,6 @@ PHONETIC_MAPPING = {
     "y": "j",
 }
 
-word_tokenize = TweetTokenizer().tokenize
 dirname = os.path.dirname(__file__)
 
 # Predict pronounciation with BERT Masking
@@ -61,6 +60,10 @@ class Predictor:
 
 class G2P:
     def __init__(self):
+        self.tokenizer = MosesTokenizer(lang="id")
+        self.detokenizer = MosesDetokenizer(lang="id")
+        self.protected_patterns = [r"\'"]
+
         dict_path = os.path.join(dirname, "data/dict.json")
         with open(dict_path) as f:
             self.dict = json.load(f)
@@ -74,9 +77,11 @@ class G2P:
         text = text.lower()
         text = re.sub(r"[^ a-z'\.,?!-]", "", text)
         text = text.replace("-", " ")
-    
+
         prons = []
-        words = word_tokenize(text)
+        words = self.tokenizer.tokenize(
+            text, protected_patterns=self.protected_patterns, escape=False
+        )
         for word in words:
             # PUEBI pronunciation
             if word in self.dict:
@@ -106,11 +111,10 @@ class G2P:
                 pron = re.sub(r"k$", "'", pron)
 
             # Apply phonetic mapping
-            if word.isalpha():
-                for g, p in PHONETIC_MAPPING.items():
-                    pron = pron.replace(g, p)
+            for g, p in PHONETIC_MAPPING.items():
+                pron = pron.replace(g, p)
 
             prons.append(pron)
             prons.append(" ")
 
-        return "".join(prons)
+        return self.detokenizer.detokenize(prons)
