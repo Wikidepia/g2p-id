@@ -9,7 +9,6 @@ from sacremoses import MosesDetokenizer, MosesTokenizer
 from .syllable_splitter import SyllableSplitter
 
 PHONETIC_MAPPING = {
-    "kh": "kʰ",  # Easier than "x"
     "sy": "ʃ",
     "ny": "ɲ",
     "ng": "ŋ",
@@ -75,7 +74,7 @@ class G2P:
 
     def __call__(self, text):
         text = text.lower()
-        text = re.sub(r"[^ a-z'\.,?!-]", "", text)
+        text = re.sub(r"[^ a-z0-9'\.,?!-]", "", text)
         text = text.replace("-", " ")
 
         prons = []
@@ -109,6 +108,7 @@ class G2P:
                 pron = re.sub(r"^x", "s", pron)
             if pron.endswith("k"):
                 pron = re.sub(r"k$", "'", pron)
+            pron.replace("kh", "x")
 
             # Apply phonetic mapping
             for g, p in PHONETIC_MAPPING.items():
