@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 
 kbbi-main
+phonemizer
+generate_data

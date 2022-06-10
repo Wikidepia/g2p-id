@@ -72,9 +72,9 @@ class G2P:
 
         self.syllable_splitter = SyllableSplitter()
 
-    def __call__(self, text):
-        text = text.lower()
-        text = re.sub(r"[^ a-z0-9'\.,?!-]", "", text)
+    def __call__(self, text: str):
+        text = text.upper()
+        text = re.sub(r"[^ A-Z0-9'\.,?!-]", "", text)
         text = text.replace("-", " ")
 
         prons = []
@@ -82,6 +82,7 @@ class G2P:
             text, protected_patterns=self.protected_patterns, escape=False
         )
         for word in words:
+            word = word.lower()
             # PUEBI pronunciation
             if word in self.dict:
                 pron = self.dict[word]
