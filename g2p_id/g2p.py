@@ -109,11 +109,11 @@ class G2P:
                 pron = re.sub(r"^x", "s", pron)
             if pron.endswith("k"):
                 pron = re.sub(r"k$", "'", pron)
-            pron.replace("kh", "x")
 
             # Apply phonetic mapping
             for g, p in PHONETIC_MAPPING.items():
                 pron = pron.replace(g, p)
+            pron = pron.replace("kh", "x")
 
             prons.append(pron)
             prons.append(" ")
