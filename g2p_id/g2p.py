@@ -8,6 +8,35 @@ from sacremoses import MosesDetokenizer, MosesTokenizer
 
 from .syllable_splitter import SyllableSplitter
 
+ABJAD_MAPPING = {
+    "a": "a",
+    "b": "bé",
+    "c": "cé",
+    "d": "dé",
+    "e": "é",
+    "f": "èf",
+    "g": "gé",
+    "h": "ha",
+    "i": "i",
+    "j": "jé",
+    "k": "ka",
+    "l": "èl",
+    "m": "èm",
+    "n": "èn",
+    "o": "o",
+    "p": "pé",
+    "q": "ki",
+    "r": "èr",
+    "s": "ès",
+    "t": "té",
+    "u": "u",
+    "v": "vé",
+    "w": "wé",
+    "x": "èks",
+    "y": "yé",
+    "z": "zèt",
+}
+
 PHONETIC_MAPPING = {
     "sy": "ʃ",
     "ny": "ɲ",
@@ -86,6 +115,8 @@ class G2P:
             # PUEBI pronunciation
             if word in self.dict:
                 pron = self.dict[word]
+            elif len(word) == 1 and word in ABJAD_MAPPING:
+                pron = ABJAD_MAPPING[word]
             elif "e" not in word or not word.isalpha():
                 pron = word
             elif "e" in word:
