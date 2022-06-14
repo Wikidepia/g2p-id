@@ -1,9 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="g2p-id",
     packages=find_packages(exclude=[]),
-    version="0.0.4",
+    version="0.0.5",
     license="MIT",
     description="Indonesian Grapheme-to-Phoneme (G2P)",
     author="Akmal",
