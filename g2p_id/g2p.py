@@ -4,7 +4,8 @@ import re
 
 import numpy as np
 import onnxruntime
-from sacremoses import MosesDetokenizer, MosesTokenizer
+from nltk.tokenize import TweetTokenizer
+from sacremoses import MosesDetokenizer
 
 from .syllable_splitter import SyllableSplitter
 
@@ -44,6 +45,7 @@ PHONETIC_MAPPING = {
     "dj": "dʒ",
     "'": "ʔ",
     "c": "tʃ",
+    "é": "e",
     "è": "ɛ",
     "ê": "ə",
     "j": "dʒ",
@@ -88,15 +90,14 @@ class Predictor:
 
 class G2P:
     def __init__(self):
-        self.tokenizer = MosesTokenizer(lang="id")
+        self.tokenizer = TweetTokenizer()
         self.detokenizer = MosesDetokenizer(lang="id")
-        self.protected_patterns = [r"\'"]
 
         dict_path = os.path.join(dirname, "data/dict.json")
         with open(dict_path) as f:
             self.dict = json.load(f)
 
-        model_path = os.path.join(dirname, "bert_pron.onnx")
+        model_path = os.path.join(dirname, "model/bert_pron.onnx")
         self.predictor = Predictor(model_path)
 
         self.syllable_splitter = SyllableSplitter()
@@ -107,9 +108,7 @@ class G2P:
         text = text.replace("-", " ")
 
         prons = []
-        words = self.tokenizer.tokenize(
-            text, protected_patterns=self.protected_patterns, escape=False
-        )
+        words = self.tokenizer.tokenize(text)
         for word in words:
             word = word.lower()
             # PUEBI pronunciation
@@ -122,18 +121,26 @@ class G2P:
             elif "e" in word:
                 pron = self.predictor.predict(word)
 
-            # [ALOFON] o or ô
+            # [ALOFON] o or ô (vokal /o/)
+            # [ALOFON] è or é (vokal /e/)
             # [HOMOFON] nk => ng
             if "o" in word or "nk" in word:
                 sylls = self.syllable_splitter.split_syllables(pron)
+                alofon_o = "o"
+                alofon_e = "é"
                 for i, syll in enumerate(sylls):
                     # [ALOFON] o or ô
-                    if syll[-1] != "o":  # Posisi tertutup
-                        sylls[i] = syll.replace("o", "ô")
+                    if "o" in syll and not syll.endswith("o"):
+                        alofon_o = "ô"  # Posisi tertutup
+                    if "e" in syll and not syll.endswith("e"):
+                        alofon_e = "è"  # Posisi tertutup
                     # [HOMOFON] nk => ng
                     if syll.endswith("nk"):
                         sylls[i] = syll[:-2] + "ng"
                 pron = "".join(sylls)
+                # Apply alofon changes
+                pron = pron.replace("o", alofon_o)
+                pron = pron.replace("e", alofon_e)
 
             # "IPA" pronunciation
             if pron.startswith("x"):
