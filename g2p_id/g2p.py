@@ -126,15 +126,12 @@ class G2P:
             # [HOMOFON] nk => ng
             if "o" in word or "nk" in word:
                 sylls = self.syllable_splitter.split_syllables(pron)
-                alofon_o = "o"
-                alofon_e = "é"
+                alofon_o, alofon_e = "o", "é"
                 for i, syll in enumerate(sylls):
-                    # [ALOFON] o or ô
                     if "o" in syll and not syll.endswith("o"):
-                        alofon_o = "ô"  # Posisi tertutup
+                        alofon_o = "ô"  # Tertutup
                     if "e" in syll and not syll.endswith("e"):
-                        alofon_e = "è"  # Posisi tertutup
-                    # [HOMOFON] nk => ng
+                        alofon_e = "è"  # Tertutup
                     if syll.endswith("nk"):
                         sylls[i] = syll[:-2] + "ng"
                 pron = "".join(sylls)
