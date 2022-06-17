@@ -63,7 +63,7 @@ dirname = os.path.dirname(__file__)
 class Predictor:
     def __init__(self, model_path):
         # fmt: off
-        self.vocab = ['', '[UNK]', 'a', 'è', 'i', 'ê', 'n', 'r', 's', 't', 'o', 'k', 'l', 'm', 'g', 'p', 'u', 'd', 'b', 'f', 'h', 'c', 'j', 'v', 'w', 'y', '-', 'z', '.', 'x', 'q', '[mask]']
+        self.vocab = ['', '[UNK]', 'a', 'i', 'ê', 'e', 'n', 'r', 's', 't', 'o', 'k', 'l', 'm', 'g', 'p', 'u', 'd', 'b', 'f', 'h', 'c', 'j', 'v', 'w', 'y', 'z', 'x', 'q', '[mask]']
         self.mask_token_id = self.vocab.index("[mask]")
         # fmt: on
         self.session = onnxruntime.InferenceSession(model_path)
@@ -71,11 +71,11 @@ class Predictor:
     def predict(self, word):
         text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
         text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
-        input_1 = np.array([text])
-        (predictions,) = self.session.run(None, {"input_1": input_1})
+        inputs = np.array([text])
+        (predictions,) = self.session.run(None, {"input_4": inputs})
 
         # find masked idx token
-        _, masked_index = np.where(input_1 == self.mask_token_id)
+        _, masked_index = np.where(inputs == self.mask_token_id)
 
         # get prediction at those masked index only
         mask_prediction = predictions[0][masked_index]
@@ -124,7 +124,7 @@ class G2P:
             # [ALOFON] o or ô (vokal /o/)
             # [ALOFON] è or é (vokal /e/)
             # [HOMOFON] nk => ng
-            if "o" in word or "nk" in word:
+            if "o" in word or "e" in word or "nk" in word:
                 sylls = self.syllable_splitter.split_syllables(pron)
                 alofon_o, alofon_e = "o", "é"
                 for i, syll in enumerate(sylls):
