@@ -159,6 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-kbbi-main
-phonemizer
-generate_data
+.DS_Store
+.backup/
+.data/
