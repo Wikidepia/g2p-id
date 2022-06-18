@@ -102,7 +102,14 @@ class G2P:
 
         self.syllable_splitter = SyllableSplitter()
 
-    def __call__(self, text: str):
+    def __call__(self, text: str) -> str:
+        """
+        Convert text to phonetic representation.
+        text: str
+            Text to convert.
+        Returns:
+            str: Phonetic representation of text.
+        """
         text = text.upper()
         text = re.sub(r"[^ A-Z0-9'\.,?!-]", "", text)
         text = text.replace("-", " ")
