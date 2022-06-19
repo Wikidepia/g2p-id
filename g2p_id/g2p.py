@@ -68,7 +68,16 @@ class Predictor:
         # fmt: on
         self.session = onnxruntime.InferenceSession(model_path)
 
-    def predict(self, word):
+    def predict(self, word: str) -> str:
+        """
+        Predict the phonetic representation of a word.
+
+        Args:
+            word (str): The word to predict.
+
+        Returns:
+            str: The predicted phonetic representation of the word.
+        """
         text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
         text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
         inputs = np.array([text])
@@ -105,10 +114,12 @@ class G2P:
     def __call__(self, text: str) -> str:
         """
         Convert text to phonetic representation.
-        text: str
-            Text to convert.
+
+        Args:
+            text (str): The text to convert.
+
         Returns:
-            str: Phonetic representation of text.
+            str: The phonetic representation of the text.
         """
         text = text.upper()
         text = re.sub(r"[^ A-Z0-9'\.,?!-]", "", text)
@@ -131,7 +142,7 @@ class G2P:
             # [ALOFON] o or ô (vokal /o/)
             # [ALOFON] è or é (vokal /e/)
             # [HOMOFON] nk => ng
-            if "o" in word or "e" in word or "nk" in word:
+            if any(c in word for c in ["o", "e", "nk"]):
                 sylls = self.syllable_splitter.split_syllables(pron)
                 alofon_o, alofon_e = "o", "é"
                 for i, syll in enumerate(sylls):
@@ -146,7 +157,6 @@ class G2P:
                 pron = pron.replace("o", alofon_o)
                 pron = pron.replace("e", alofon_e)
 
-            # "IPA" pronunciation
             if pron.startswith("x"):
                 pron = re.sub(r"^x", "s", pron)
             if pron.endswith("k"):
