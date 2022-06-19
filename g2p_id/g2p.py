@@ -121,14 +121,13 @@ class G2P:
         Returns:
             str: The phonetic representation of the text.
         """
-        text = text.upper()
-        text = re.sub(r"[^ A-Z0-9'\.,?!-]", "", text)
+        text = text.lower()
+        text = re.sub(r"[^ a-z0-9'\.,?!-]", "", text)
         text = text.replace("-", " ")
 
         prons = []
         words = self.tokenizer.tokenize(text)
         for word in words:
-            word = word.lower()
             # PUEBI pronunciation
             if word in self.dict:
                 pron = self.dict[word]
