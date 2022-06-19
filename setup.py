@@ -7,10 +7,15 @@ setup(
     license="MIT",
     description="Indonesian Grapheme-to-Phoneme (G2P)",
     author="Akmal",
-    author_email="magchuz@pm.me",
+    author_email="akmal@depia.wiki",
     long_description_content_type="text/markdown",
     url="https://github.com/Wikidepia/g2p-id",
-    install_requires=["sacremoses>=0.0.41", "numpy>=1.22.4", "onnxruntime>=1.11.1"],
+    install_requires=[
+        "sacremoses>=0.0.41",
+        "nltk>=3.7",
+        "numpy>=1.22.4",
+        "onnxruntime>=1.11.1",
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
