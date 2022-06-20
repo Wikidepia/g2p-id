@@ -43,14 +43,6 @@ PHONETIC_MAPPING = {
     "ny": "ɲ",
     "ng": "ŋ",
     "dj": "dʒ",
-    "aa": "a'a",
-    "ii": "i'i",
-    "oo": "o'o",
-    "êê": "ê'ê",
-    "ua": "uwa",
-    "ui": "uwi",
-    "ia": "iya",
-    "io": "iyo",
     "'": "ʔ",
     "c": "tʃ",
     "é": "e",
@@ -63,6 +55,7 @@ PHONETIC_MAPPING = {
     "x": "ks",
     "y": "j",
 }
+
 
 dirname = os.path.dirname(__file__)
 
