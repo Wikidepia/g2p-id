@@ -22,6 +22,11 @@ g2p = G2P()
 g2p("Rumah Agus terbakar.") # rumah agus tərbakar.
 ```
 
+## References
+
+- [Variasi Bunyi Vokal - Narabahasa](https://narabahasa.id/linguistik-umum/fonologi/variasi-bunyi-vokal)
+- [Predicting Phonemes with BERT - Wilson Wongso](https://w11wo.github.io/posts/2022/04/predicting-phonemes-with-bert/)
+
 ## TODO
 
 - [ ] Add test cases
