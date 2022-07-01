@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name="g2p-id",
     packages=find_packages(exclude=[]),
-    version="0.0.5",
+    version="0.0.6",
     license="MIT",
     description="Indonesian Grapheme-to-Phoneme (G2P)",
     author="Akmal",
