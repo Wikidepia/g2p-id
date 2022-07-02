@@ -155,6 +155,8 @@ class G2P:
                 pron = "".join(sylls)
                 # Apply alofon changes
                 pron = pron.replace("o", alofon_o)
+                if pron.count("e") == 1:
+                    alofon_e = "è"
                 pron = pron.replace("e", alofon_e)
 
             if pron.startswith("x"):
