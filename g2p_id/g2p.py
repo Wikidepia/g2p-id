@@ -152,6 +152,10 @@ class G2P:
                         alofon_e = "è"  # Tertutup
                     if syll.endswith("nk"):
                         sylls[i] = syll[:-2] + "ng"
+                    # Syllable stress
+                    # Before last syllable
+                    if i == len(sylls) - 2:
+                        sylls[i] = "ˈ" + sylls[i]
                 pron = "".join(sylls)
                 # Apply alofon changes
                 pron = pron.replace("o", alofon_o)
