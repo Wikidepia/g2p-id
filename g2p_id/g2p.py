@@ -175,10 +175,10 @@ class G2P:
                     sylls[i] = syll[:-1] + "t"
                 if syll.endswith("b"):
                     sylls[i] = syll[:-1] + "p"
-                if pron.endswith("k"):
-                    pron = re.sub(r"k$", "'", pron)
-                if pron.endswith("g"):
-                    pron = re.sub(r"g$", "'", pron)
+                if syll.endswith("k"):
+                    sylls[i] = re.sub(r"k$", "'", syll)
+                if syll.endswith("g"):
+                    sylls[i] = re.sub(r"g$", "'", syll)
 
             pron = "".join(sylls)
             if pron.startswith("x"):
@@ -186,7 +186,8 @@ class G2P:
 
             # Apply phonetic and alophone mapping
             for v in alophone:
-                pron = pron.replace(v, alophone[v])
+                if pron.count(v) > 1:
+                    pron = pron.replace(v, alophone[v])
             for g, p in PHONETIC_MAPPING.items():
                 pron = pron.replace(g, p)
             pron = pron.replace("kh", "x")
