@@ -42,15 +42,18 @@ PHONETIC_MAPPING = {
     "sy": "ʃ",
     "ny": "ɲ",
     "ng": "ŋ",
-    "dj": "dʒ",
+    "dj": "d͡ʒ",
     "'": "ʔ",
-    "c": "tʃ",
+    "c": "t͡ʃ",
     "é": "e",
     "è": "ɛ",
     "ê": "ə",
-    "j": "dʒ",
+    "g": "ɡ",
+    "I": "ɪ",
+    "j": "d͡ʒ",
     "ô": "ɔ",
     "q": "k",
+    "U": "ʊ",
     "v": "f",
     "x": "ks",
     "y": "j",
@@ -139,34 +142,51 @@ class G2P:
             elif "e" in word:
                 pron = self.predictor.predict(word)
 
-            # [ALOFON] o or ô (vokal /o/)
-            # [ALOFON] è or é (vokal /e/)
-            # [HOMOFON] nk => ng
-            if any(c in word for c in ["o", "e", "nk"]):
-                sylls = self.syllable_splitter.split_syllables(pron)
-                alofon_o, alofon_e = "o", "é"
-                for i, syll in enumerate(sylls):
-                    if "o" in syll and not syll.endswith("o"):
-                        alofon_o = "ô"  # Tertutup
-                    if "e" in syll and not syll.endswith("e"):
-                        alofon_e = "è"  # Tertutup
-                    if syll.endswith("nk"):
-                        sylls[i] = syll[:-2] + "ng"
-                    # Syllable stress
-                    # Before last syllable
-                    if i == len(sylls) - 2:
-                        sylls[i] = "ˈ" + sylls[i]
-                pron = "".join(sylls)
-                # Apply alofon changes
-                pron = pron.replace("o", alofon_o)
-                pron = pron.replace("e", alofon_e)
+            # Apply rules on syllable basis
+            sylls = self.syllable_splitter.split_syllables(pron)
+            alophone = {"e": "é", "o": "o"}
+            alophone_map = {"i": "I", "u": "U", "e": "è", "o": "ô"}
+            for i, syll in enumerate(sylls):
+                # Syllable stress
+                if i == len(sylls) - 2:
+                    sylls[i] = "ˈ" + sylls[i]
 
+                # Alophone syllable rules
+                for v in ["e", "o"]:
+                    if v in syll and not syll.endswith(v):
+                        alophone[v] = alophone_map[v]
+
+                # Alophone syllable stress rules
+                for v in ["i", "u"]:
+                    if (
+                        v in syll
+                        and not syll.startswith("ˈ")
+                        and not syll.endswith(v)
+                        and (
+                            not any(syll.endswith(x) for x in ["m", "n", "ng"])
+                            or i + 1 == len(sylls)
+                        )
+                    ):
+                        sylls[i] = syll.replace(v, alophone_map[v])
+
+                if syll.endswith("nk"):
+                    sylls[i] = syll[:-2] + "ng"
+                if syll.endswith("d"):
+                    sylls[i] = syll[:-1] + "t"
+                if syll.endswith("b"):
+                    sylls[i] = syll[:-1] + "p"
+                if pron.endswith("k"):
+                    pron = re.sub(r"k$", "'", pron)
+                if pron.endswith("g"):
+                    pron = re.sub(r"g$", "'", pron)
+
+            pron = "".join(sylls)
             if pron.startswith("x"):
                 pron = re.sub(r"^x", "s", pron)
-            if pron.endswith("k"):
-                pron = re.sub(r"k$", "'", pron)
 
-            # Apply phonetic mapping
+            # Apply phonetic and alophone mapping
+            for v in alophone:
+                pron = pron.replace(v, alophone[v])
             for g, p in PHONETIC_MAPPING.items():
                 pron = pron.replace(g, p)
             pron = pron.replace("kh", "x")
