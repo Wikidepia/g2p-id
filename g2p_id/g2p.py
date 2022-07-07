@@ -142,14 +142,21 @@ class G2P:
             elif "e" in word:
                 pron = self.predictor.predict(word)
 
-            # Apply rules on syllable basis
             sylls = self.syllable_splitter.split_syllables(pron)
+            # Decide where to put the stress
+            stress_loc = len(sylls) - 1
+            if "ê" in pron:
+                stress_loc = len(sylls) - 2
+                if len(sylls) < 3:
+                    stress_loc = len(sylls)
+
+            # Apply rules on syllable basis
             alophone = {"e": "é", "o": "o"}
             alophone_map = {"i": "I", "u": "U", "e": "è", "o": "ô"}
             for i, syll in enumerate(sylls):
                 # Syllable stress
-                if i == len(sylls) - 2:
-                    sylls[i] = "ˈ" + sylls[i]
+                if i == stress_loc - 1:
+                    syll = "ˈ" + syll
 
                 # Alophone syllable rules
                 for v in ["e", "o"]:
@@ -167,18 +174,19 @@ class G2P:
                             or i + 1 == len(sylls)
                         )
                     ):
-                        sylls[i] = syll.replace(v, alophone_map[v])
+                        syll = syll.replace(v, alophone_map[v])
 
                 if syll.endswith("nk"):
-                    sylls[i] = syll[:-2] + "ng"
+                    syll = syll[:-2] + "ng"
                 if syll.endswith("d"):
-                    sylls[i] = syll[:-1] + "t"
+                    syll = syll[:-1] + "t"
                 if syll.endswith("b"):
-                    sylls[i] = syll[:-1] + "p"
+                    syll = syll[:-1] + "p"
                 if syll.endswith("k"):
-                    sylls[i] = re.sub(r"k$", "'", syll)
+                    syll = re.sub(r"k$", "'", syll)
                 if syll.endswith("g"):
-                    sylls[i] = re.sub(r"g$", "'", syll)
+                    syll = re.sub(r"g$", "'", syll)
+                sylls[i] = syll
 
             pron = "".join(sylls)
             if pron.startswith("x"):
