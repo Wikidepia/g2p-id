@@ -13,8 +13,8 @@ setup(
     install_requires=[
         "sacremoses>=0.0.41",
         "nltk>=3.7",
-        "numpy>=1.22.4",
-        "onnxruntime>=1.11.1",
+        "numpy>=1.21.0",
+        "onnxruntime>=1.7.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
