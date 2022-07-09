@@ -67,7 +67,7 @@ dirname = os.path.dirname(__file__)
 class Predictor:
     def __init__(self, model_path):
         # fmt: off
-        self.vocab = ['', '[UNK]', 'a', 'i', 'ê', 'e', 'n', 'r', 's', 't', 'o', 'k', 'l', 'm', 'g', 'p', 'u', 'd', 'b', 'f', 'h', 'c', 'j', 'v', 'w', 'y', 'z', 'x', 'q', '[mask]']
+        self.vocab = ['', '[UNK]', 'a', 'n', 'ê', 'e', 'i', 'r', 'k', 's', 't', 'g', 'm', 'u', 'l', 'p', 'o', 'd', 'b', 'h', 'c', 'j', 'y', 'f', 'w', 'v', 'z', 'x', 'q', '[mask]']
         self.mask_token_id = self.vocab.index("[mask]")
         # fmt: on
         self.session = onnxruntime.InferenceSession(model_path)
