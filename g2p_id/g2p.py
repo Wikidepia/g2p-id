@@ -142,6 +142,10 @@ class G2P:
             elif "e" in word:
                 pron = self.predictor.predict(word)
 
+            # Replace alofon /e/ with e (temporary)
+            pron = pron.replace("é", "e")
+            pron = pron.replace("è", "e")
+
             sylls = self.syllable_splitter.split_syllables(pron)
             # Decide where to put the stress
             stress_loc = len(sylls) - 1
@@ -151,6 +155,8 @@ class G2P:
                     stress_loc = len(sylls)
 
             # Apply rules on syllable basis
+            # All alophone are set to tense by default
+            # and will be changed to lax if needed
             alophone = {"e": "é", "o": "o"}
             alophone_map = {"i": "I", "u": "U", "e": "è", "o": "ô"}
             for i, syll in enumerate(sylls, start=1):
@@ -161,14 +167,15 @@ class G2P:
                 # Alophone syllable rules
                 for v in ["e", "o"]:
                     # Replace with lax allphone [ɛ, ɔ] if
-                    # in the middle of syllable 
-                    if v in syll and not syll.endswith(v):
+                    # in closed final syllables
+                    if v in syll and not syll.endswith(v) and i == len(sylls):
                         alophone[v] = alophone_map[v]
 
                 # Alophone syllable stress rules
                 for v in ["i", "u"]:
                     # Replace with lax allphone [ɪ, ʊ] if
                     # in the middle of syllable without stress
+                    # and not ends with coda nasal [m, n, ng] (except for final syllable)
                     if (
                         v in syll
                         and not syll.startswith("ˈ")
@@ -190,7 +197,7 @@ class G2P:
                     syll = re.sub(r"k$", "'", syll)
                 if syll.endswith("g") and not syll.endswith("ng"):
                     syll = re.sub(r"g$", "'", syll)
-                sylls[i-1] = syll
+                sylls[i - 1] = syll
 
             pron = "".join(sylls)
             if pron.startswith("x"):
@@ -198,8 +205,9 @@ class G2P:
 
             # Apply phonetic and alophone mapping
             for v in alophone:
-                if pron.count(v) > 1:
-                    pron = pron.replace(v, alophone[v])
+                if v == "o" and pron.count("o") == 1:
+                    continue
+                pron = pron.replace(v, alophone[v])
             for g, p in PHONETIC_MAPPING.items():
                 pron = pron.replace(g, p)
             pron = pron.replace("kh", "x")
