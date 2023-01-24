@@ -153,25 +153,29 @@ class G2P:
             # Apply rules on syllable basis
             alophone = {"e": "é", "o": "o"}
             alophone_map = {"i": "I", "u": "U", "e": "è", "o": "ô"}
-            for i, syll in enumerate(sylls):
-                # Syllable stress
-                if i == stress_loc - 1:
+            for i, syll in enumerate(sylls, start=1):
+                # Put Syllable stress
+                if i == stress_loc:
                     syll = "ˈ" + syll
 
                 # Alophone syllable rules
                 for v in ["e", "o"]:
+                    # Replace with lax allphone [ɛ, ɔ] if
+                    # in the middle of syllable 
                     if v in syll and not syll.endswith(v):
                         alophone[v] = alophone_map[v]
 
                 # Alophone syllable stress rules
                 for v in ["i", "u"]:
+                    # Replace with lax allphone [ɪ, ʊ] if
+                    # in the middle of syllable without stress
                     if (
                         v in syll
                         and not syll.startswith("ˈ")
                         and not syll.endswith(v)
                         and (
                             not any(syll.endswith(x) for x in ["m", "n", "ng"])
-                            or i + 1 == len(sylls)
+                            or i == len(sylls)
                         )
                     ):
                         syll = syll.replace(v, alophone_map[v])
@@ -184,9 +188,9 @@ class G2P:
                     syll = syll[:-1] + "p"
                 if syll.endswith("k"):
                     syll = re.sub(r"k$", "'", syll)
-                if syll.endswith("g"):
+                if syll.endswith("g") and not syll.endswith("ng"):
                     syll = re.sub(r"g$", "'", syll)
-                sylls[i] = syll
+                sylls[i-1] = syll
 
             pron = "".join(sylls)
             if pron.startswith("x"):
