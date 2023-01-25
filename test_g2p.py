@@ -15,26 +15,29 @@ def test_g2p_vocal():
     assert g2p("bebek") == "ˈbɛbɛʔ"
 
     # Alofon [ə]
-    assert g2p("tante") == "tanˈtə"
+    assert g2p("tante") == "ˈtantə"
     assert g2p("enam") == "əˈnam"
     assert g2p("emas") == "əˈmas"
 
     # Alofon [o]
     assert g2p("toko") == "ˈtoko"
     assert g2p("roda") == "ˈroda"
-    assert g2p("sekolah") == "ˈsəkolah"
+    assert g2p("sekolah") == "səˈkolah"
 
     # Alofon [ɔ]
     assert g2p("rokok") == "ˈrɔkɔʔ"
     assert g2p("pojok") == "ˈpɔdʒɔʔ"
     assert g2p("momok") == "ˈmɔmɔʔ"
     assert g2p("pohon") == "ˈpɔhɔn"
+    # assert g2p("positif") == "pɔˈsitɪf"
 
     # Alofon [i]
     assert g2p("gigi") == "ˈɡiɡi"
     assert g2p("tali") == "ˈtali"
     assert g2p("ini") == "ˈini"
     assert g2p("bila") == "ˈbila"
+    assert g2p("simpang") == "ˈsimpaŋ"
+    assert g2p("periksa") == "pəˈriʔsa"
 
     # Alofon [ɪ]
     assert g2p("banting") == "ˈbantɪŋ"
@@ -51,7 +54,7 @@ def test_g2p_vocal():
 
     assert g2p("kumbang") == "ˈkumbaŋ"
     assert g2p("tunggu") == "ˈtuŋɡu"
-    assert g2p("bundel") == "bunˈdəl"
+    assert g2p("bundel") == "ˈbundəl"
 
     # Alofon [ʊ]
     assert g2p("warung") == "ˈwarʊŋ"

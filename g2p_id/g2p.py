@@ -149,9 +149,10 @@ class G2P:
             sylls = self.syllable_splitter.split_syllables(pron)
             # Decide where to put the stress
             stress_loc = len(sylls) - 1
-            if "ê" in pron:
-                stress_loc = len(sylls) - 2
-                if len(sylls) < 3:
+            if len(sylls) > 1 and "ê" in sylls[-2]:
+                if "ê" in sylls[-1]:
+                    stress_loc = len(sylls) - 2
+                else:
                     stress_loc = len(sylls)
 
             # Apply rules on syllable basis
