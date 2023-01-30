@@ -84,7 +84,7 @@ class Predictor:
         """
         text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
         text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
-        inputs = np.array([text])
+        inputs = np.array([text], dtype=np.int64)
         (predictions,) = self.session.run(None, {"input_4": inputs})
 
         # find masked idx token
