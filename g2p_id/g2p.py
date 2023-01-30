@@ -146,6 +146,10 @@ class G2P:
             pron = pron.replace("é", "e")
             pron = pron.replace("è", "e")
 
+            # Replace /x/ with /s/
+            if pron.startswith("x"):
+                pron = "s" + pron[1:]
+
             sylls = self.syllable_splitter.split_syllables(pron)
             # Decide where to put the stress
             stress_loc = len(sylls) - 1
@@ -190,20 +194,17 @@ class G2P:
 
                 if syll.endswith("nk"):
                     syll = syll[:-2] + "ng"
-                if syll.endswith("d"):
+                elif syll.endswith("d"):
                     syll = syll[:-1] + "t"
-                if syll.endswith("b"):
+                elif syll.endswith("b"):
                     syll = syll[:-1] + "p"
-                if syll.endswith("k"):
-                    syll = re.sub(r"k$", "'", syll)
-                if syll.endswith("g") and not syll.endswith("ng"):
-                    syll = re.sub(r"g$", "'", syll)
+                elif syll.endswith("k") or (
+                    syll.endswith("g") and not syll.endswith("ng")
+                ):
+                    syll = syll[:-1] + "'"
                 sylls[i - 1] = syll
 
             pron = "".join(sylls)
-            if pron.startswith("x"):
-                pron = re.sub(r"^x", "s", pron)
-
             # Apply phonetic and alophone mapping
             for v in alophone:
                 if v == "o" and pron.count("o") == 1:
