@@ -1,2 +1,2 @@
-include g2p_id/data/dict.json
-include g2p_id/model/bert_pron.onnx
+include g2p_id/data/schwa_dict.csv
+include g2p_id/model/syllabifier.crfsuite

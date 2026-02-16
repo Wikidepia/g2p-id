@@ -1,220 +1,175 @@
-import json
-import os
+import csv
 import re
+import os
 
-import numpy as np
-import onnxruntime
-from nltk.tokenize import TweetTokenizer
-from sacremoses import MosesDetokenizer
-
-from .syllable_splitter import SyllableSplitter
-
-ABJAD_MAPPING = {
-    "a": "a",
-    "b": "bé",
-    "c": "cé",
-    "d": "dé",
-    "e": "é",
-    "f": "èf",
-    "g": "gé",
-    "h": "ha",
-    "i": "i",
-    "j": "jé",
-    "k": "ka",
-    "l": "èl",
-    "m": "èm",
-    "n": "èn",
-    "o": "o",
-    "p": "pé",
-    "q": "ki",
-    "r": "èr",
-    "s": "ès",
-    "t": "té",
-    "u": "u",
-    "v": "vé",
-    "w": "wé",
-    "x": "èks",
-    "y": "yé",
-    "z": "zèt",
-}
-
-PHONETIC_MAPPING = {
-    "sy": "ʃ",
-    "ny": "ɲ",
-    "ng": "ŋ",
-    "dj": "dʒ",
-    "'": "ʔ",
-    "c": "tʃ",
-    "é": "e",
-    "è": "ɛ",
-    "ê": "ə",
-    "g": "ɡ",
-    "I": "ɪ",
-    "j": "dʒ",
-    "ô": "ɔ",
-    "q": "k",
-    "U": "ʊ",
-    "v": "f",
-    "x": "ks",
-    "y": "j",
-}
-
+import pycrfsuite
 
 dirname = os.path.dirname(__file__)
 
-# Predict pronounciation with BERT Masking
-# Read more: https://w11wo.github.io/posts/2022/04/predicting-phonemes-with-bert/
-class Predictor:
-    def __init__(self, model_path):
-        # fmt: off
-        self.vocab = ['', '[UNK]', 'a', 'n', 'ê', 'e', 'i', 'r', 'k', 's', 't', 'g', 'm', 'u', 'l', 'p', 'o', 'd', 'b', 'h', 'c', 'j', 'y', 'f', 'w', 'v', 'z', 'x', 'q', '[mask]']
-        self.mask_token_id = self.vocab.index("[mask]")
-        # fmt: on
-        self.session = onnxruntime.InferenceSession(model_path)
-
-    def predict(self, word: str) -> str:
-        """
-        Predict the phonetic representation of a word.
-
-        Args:
-            word (str): The word to predict.
-
-        Returns:
-            str: The predicted phonetic representation of the word.
-        """
-        text = [self.vocab.index(c) if c != "e" else self.mask_token_id for c in word]
-        text.extend([0] * (32 - len(text)))  # Pad to 32 tokens
-        inputs = np.array([text], dtype=np.int64)
-        (predictions,) = self.session.run(None, {"input_4": inputs})
-
-        # find masked idx token
-        _, masked_index = np.where(inputs == self.mask_token_id)
-
-        # get prediction at those masked index only
-        mask_prediction = predictions[0][masked_index]
-        predicted_ids = np.argmax(mask_prediction, axis=1)
-
-        # replace mask with predicted token
-        for i, idx in enumerate(masked_index):
-            text[idx] = predicted_ids[i]
-
-        return "".join([self.vocab[i] for i in text if i != 0])
-
-
 class G2P:
     def __init__(self):
-        self.tokenizer = TweetTokenizer()
-        self.detokenizer = MosesDetokenizer(lang="id")
+        self.tagger = pycrfsuite.Tagger() # type: ignore
+        self.tagger.open(os.path.join(dirname, "model/syllabifier.crfsuite"))
+        self.schwa_dict = self.init_schwa_dict()
 
-        dict_path = os.path.join(dirname, "data/dict.json")
-        with open(dict_path) as f:
-            self.dict = json.load(f)
+        self.vokal = set(["a", "i", "u", "e", "o"])
+        self.abjad_mapping = {
+            "a": "a",
+            "b": "bé",
+            "c": "cé",
+            "d": "dé",
+            "e": "é",
+            "f": "èf",
+            "g": "gé",
+            "h": "ha",
+            "i": "i",
+            "j": "jé",
+            "k": "ka",
+            "l": "èl",
+            "m": "èm",
+            "n": "èn",
+            "o": "o",
+            "p": "pé",
+            "q": "ki",
+            "r": "èr",
+            "s": "ès",
+            "t": "té",
+            "u": "u",
+            "v": "vé",
+            "w": "wé",
+            "x": "èks",
+            "y": "yé",
+            "z": "zèt",
+        }
+        self.kv_pattern = [
+            "VK",
+            "KV",
+            "KVK",
+            "VKK",
+            "KKV",
+            "KKVK",
+            "KVKK",
+            "KKKV",
+            "KKKVK",
+            "KKVKK",
+            "KVKKK",
+        ]
 
-        model_path = os.path.join(dirname, "model/bert_pron.onnx")
-        self.predictor = Predictor(model_path)
+    def init_schwa_dict(self):
+        schwa = {}
+        with open(os.path.join(dirname, "data/schwa_dict.csv")) as csvfile:
+            spamreader = csv.reader(csvfile)
+            for row in spamreader:
+                schwa[row[0]] = row[1]
+        return schwa
 
-        self.syllable_splitter = SyllableSplitter()
+    def kv_from_word(self, word):
+        return "".join("V" if c in self.vokal else "K" for c in word)
 
-    def __call__(self, text: str) -> str:
-        """
-        Convert text to phonetic representation.
+    def replace_ranges(self, s, replacements):
+        replacements.sort(key=lambda x: x[0])
+        result = []
+        last = 0
 
-        Args:
-            text (str): The text to convert.
+        for start, end, new in replacements:
+            result.append(s[last:start])
+            result.append(new)
+            last = end
 
-        Returns:
-            str: The phonetic representation of the text.
-        """
+        result.append(s[last:])
+        return "".join(result)
+
+    def generate_crfsyll_feat(self, word, i):
+        char = word[i]
+        features = [
+            "bias",
+            f"c={char}",
+        ]
+
+        if i > 0:
+            features.append(f"c[-1:0]={word[i-1]}{word[i]}")
+        if i > 1:
+            features.append(f"c[-2:0]={word[i-2]}{word[i-1]}{word[i]}")
+
+        if i < len(word) - 1:
+            features.append(f"c[0:+1]={word[i]}{word[i+1]}")
+        if i < len(word) - 2:
+            features.append(f"c[0:+2]={word[i]}{word[i+1]}{word[i+2]}")
+
+        for n in range(1, min(6, i + 1)):
+            features.append(f"c[-{n}]={word[i-n][0]}")
+
+        for n in range(1, min(6, len(word) - i)):
+            features.append(f"c[+{n}]={word[i+n][0]}")
+
+        if i == 0:
+            features.append("BOS")
+        if i == len(word) - 1:
+            features.append("EOS")
+        return features
+
+    def to_syllables(self, word) -> list:
+        syllables_ret = [""]
+        upper_word = word.replace("é", "e").upper()
+        word_feat = [
+            self.generate_crfsyll_feat(upper_word, i) for i in range(len(upper_word))
+        ]
+        for char, tag in zip(word, self.tagger.tag(word_feat)):
+            if tag == "O":
+                syllables_ret[-1] += char
+            elif tag == "S":
+                syllables_ret[-1] += char
+                syllables_ret.append("")
+            else:
+                raise ValueError("new char?")
+        return syllables_ret
+
+    def to_phoneme(self, text, split_abbr=False):
+        text_syllable = []
         text = text.lower()
-        text = re.sub(r"[^ a-z0-9'\.,?!-]", "", text)
-        text = text.replace("-", " ")
 
-        prons = []
-        words = self.tokenizer.tokenize(text)
-        for word in words:
-            # PUEBI pronunciation
-            if word in self.dict:
-                pron = self.dict[word]
-            elif len(word) == 1 and word in ABJAD_MAPPING:
-                pron = ABJAD_MAPPING[word]
-            elif "e" not in word or not word.isalpha():
-                pron = word
-            elif "e" in word:
-                pron = self.predictor.predict(word)
+        # simple phoneme mapping for double consonant
+        text = text.replace("x", "kh").replace("c", "tʃ").replace("j", "dʒ")
+        text = text.replace("ng", "ŋ").replace("ny", "ɲ")
+        text = text.replace("sy", "ʃ").replace("kh", "x")
 
-            # Replace alofon /e/ with e (temporary)
-            pron = pron.replace("é", "e")
-            pron = pron.replace("è", "e")
+        repls = []
+        for match_re in re.finditer(r"[a-zŋɲʃʒ]+", text):
+            word = match_re.group()
+            # `split_abbr` will expand abbr
+            is_abbr = False
+            if split_abbr:
+                word_kv = self.kv_from_word(word)
+                is_abbr = not any(p in word_kv for p in self.kv_pattern)
+                if is_abbr:
+                    word = "".join(self.abjad_mapping[c] for c in word)
 
-            # Replace /x/ with /s/
-            if pron.startswith("x"):
-                pron = "s" + pron[1:]
+            # replace word from schwa dictionary
+            if "e" in word and word in self.schwa_dict:
+                word = self.schwa_dict[word]
+            word = word.replace("ê", "ə")
 
-            sylls = self.syllable_splitter.split_syllables(pron)
-            # Decide where to put the stress
-            stress_loc = len(sylls) - 1
-            if len(sylls) > 1 and "ê" in sylls[-2]:
-                if "ê" in sylls[-1]:
-                    stress_loc = len(sylls) - 2
-                else:
-                    stress_loc = len(sylls)
+            new_word = word
+            syllables = self.to_syllables(word)
+            new_syllables = syllables
+            # check for diftong and glotal /k/
+            if any(k in word for k in ["k", "ai", "au", "oi"]) and not is_abbr:
+                new_word, new_syllables = "", []
+                for s in syllables:
+                    # check for glotal /k/
+                    if s.endswith("k"):
+                        s = s[:-1] + "ʔ" # glotal /k/ -> /?/
 
-            # Apply rules on syllable basis
-            # All alophone are set to tense by default
-            # and will be changed to lax if needed
-            alophone = {"e": "é", "o": "o"}
-            alophone_map = {"i": "I", "u": "U", "e": "è", "o": "ô"}
-            for i, syll in enumerate(sylls, start=1):
-                # Put Syllable stress
-                if i == stress_loc:
-                    syll = "ˈ" + syll
+                    # check for diftong
+                    for d in ["ai", "au", "oi"]:
+                        s = s.replace("ai", "aɪ")
+                        s = s.replace("au", "aʊ")
+                        s = s.replace("oi", "ɔɪ")
 
-                # Alophone syllable rules
-                for v in ["e", "o"]:
-                    # Replace with lax allphone [ɛ, ɔ] if
-                    # in closed final syllables
-                    if v in syll and not syll.endswith(v) and i == len(sylls):
-                        alophone[v] = alophone_map[v]
+                    new_word += s
+                    new_syllables.append(s)
 
-                # Alophone syllable stress rules
-                for v in ["i", "u"]:
-                    # Replace with lax allphone [ɪ, ʊ] if
-                    # in the middle of syllable without stress
-                    # and not ends with coda nasal [m, n, ng] (except for final syllable)
-                    if (
-                        v in syll
-                        and not syll.startswith("ˈ")
-                        and not syll.endswith(v)
-                        and (
-                            not any(syll.endswith(x) for x in ["m", "n", "ng"])
-                            or i == len(sylls)
-                        )
-                    ):
-                        syll = syll.replace(v, alophone_map[v])
-
-                if syll.endswith("nk"):
-                    syll = syll[:-2] + "ng"
-                elif syll.endswith("d"):
-                    syll = syll[:-1] + "t"
-                elif syll.endswith("b"):
-                    syll = syll[:-1] + "p"
-                elif syll.endswith("k") or (
-                    syll.endswith("g") and not syll.endswith("ng")
-                ):
-                    syll = syll[:-1] + "'"
-                sylls[i - 1] = syll
-
-            pron = "".join(sylls)
-            # Apply phonetic and alophone mapping
-            for v in alophone:
-                if v == "o" and pron.count("o") == 1:
-                    continue
-                pron = pron.replace(v, alophone[v])
-            for g, p in PHONETIC_MAPPING.items():
-                pron = pron.replace(g, p)
-            pron = pron.replace("kh", "x")
-
-            prons.append(pron)
-            prons.append(" ")
-
-        return self.detokenizer.detokenize(prons)
+            repls.append((match_re.start(), match_re.end(), new_word))
+            text_syllable.extend(new_syllables)
+            text_syllable.append(" ")  # add space after new word
+        return self.replace_ranges(text, repls), text_syllable
