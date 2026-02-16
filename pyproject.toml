@@ -1,11 +1,15 @@
 [project]
 name = "g2p-id"
 version = "0.1.0"
-description = "Add your description here"
+description = "Indonesian Grapheme-to-Phoneme (IPA notation)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "python-crfsuite>=0.9.12",
+]
+
+[dependency-groups]
+dev = [
     "black>=26.1.0",
     "isort>=7.0.0",
-    "python-crfsuite>=0.9.12",
 ]

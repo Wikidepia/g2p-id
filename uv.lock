@@ -65,16 +65,22 @@ name = "g2p-id"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "black" },
-    { name = "isort" },
     { name = "python-crfsuite" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "isort" },
+]
+
 [package.metadata]
-requires-dist = [
+requires-dist = [{ name = "python-crfsuite", specifier = ">=0.9.12" }]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "black", specifier = ">=26.1.0" },
     { name = "isort", specifier = ">=7.0.0" },
-    { name = "python-crfsuite", specifier = ">=0.9.12" },
 ]
 
 [[package]]
