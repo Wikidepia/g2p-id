@@ -54,6 +54,9 @@ class G2P:
             "KKVKK",
             "KVKKK",
         ]
+        # glotal matching similar to bookbot's g2p
+        # [a: at this point, it seems that most of this project code is the same lmao]
+        self.glotal_regex = re.compile(r"[aiueo]k[bcdfghjklmnpqrstvwxyz]")
 
     def init_schwa_dict(self):
         schwa = {}
@@ -149,17 +152,20 @@ class G2P:
                 word = self.schwa_dict[word]
             word = word.replace("ê", "ə")
 
+            # check for glotal stop /k/
+            if word.endswith("k"):
+                word = word[:-1] + "ʔ"
+            for glot in self.glotal_regex.finditer(word):
+                word = word[:glot.start()+1] + "ʔ" + word[-glot.start()+1:]
+
             new_word = word
             syllables = self.to_syllables(word)
             new_syllables = syllables
-            # check for diftong and glotal /k/
-            if any(k in word for k in ["k", "ai", "au", "oi"]) and not is_abbr:
+
+            # check for diftong
+            if any(k in word for k in ["ai", "au", "oi"]) and not is_abbr:
                 new_word, new_syllables = "", []
                 for s in syllables:
-                    # check for glotal /k/
-                    if s.endswith("k"):
-                        s = s[:-1] + "ʔ" # glotal /k/ -> /?/
-
                     # check for diftong
                     for d in ["ai", "au", "oi"]:
                         s = s.replace("ai", "aɪ")
