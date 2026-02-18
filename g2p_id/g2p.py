@@ -56,7 +56,7 @@ class G2P:
         ]
         # glotal matching similar to bookbot's g2p
         # [a: at this point, it seems that most of this project code is the same lmao]
-        self.glotal_regex = re.compile(r"[aiueo]k[bcdfghjklmnpqrstvwxyz]")
+        self.glotal_regex = re.compile(r"[aiueəo]k[bcdfghjklmnpqrstvwxyz]")
 
     def init_schwa_dict(self):
         schwa = {}
@@ -132,9 +132,9 @@ class G2P:
         text = text.lower()
 
         # simple phoneme mapping for double consonant
-        text = text.replace("x", "kh").replace("c", "tʃ").replace("j", "dʒ")
-        text = text.replace("ng", "ŋ").replace("ny", "ɲ")
-        text = text.replace("sy", "ʃ").replace("kh", "x")
+        text = text.replace("x", "ks").replace("c", "tʃ").replace("j", "dʒ")
+        text = text.replace("ng", "ŋ").replace("ny", "ɲ").replace("sy", "ʃ")
+        text = text.replace("kh", "x").replace("v", "f")
 
         repls = []
         for match_re in re.finditer(r"[a-zŋɲʃʒ]+", text):
@@ -155,8 +155,8 @@ class G2P:
             # check for glotal stop /k/
             if word.endswith("k"):
                 word = word[:-1] + "ʔ"
-            for glot in self.glotal_regex.finditer(word):
-                word = word[:glot.start()+1] + "ʔ" + word[-glot.start()+1:]
+            for glot in list(self.glotal_regex.finditer(word)):
+                word = word[:glot.start()+1] + "ʔ" + word[glot.end()-1:]
 
             new_word = word
             syllables = self.to_syllables(word)
@@ -179,3 +179,8 @@ class G2P:
             text_syllable.extend(new_syllables)
             text_syllable.append(" ")  # add space after new word
         return self.replace_ranges(text, repls), text_syllable
+
+    def to_grapheme(self, text):
+        text = text.replace("tʃ", "c").replace("dʒ", "j").replace("ŋ", "ng")
+        text = text.replace("ny", "ɲ").replace("ʃ", "sy").replace("x", "kh")
+        return text
