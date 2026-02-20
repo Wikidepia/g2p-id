@@ -182,5 +182,7 @@ class G2P:
 
     def to_grapheme(self, text):
         text = text.replace("tʃ", "c").replace("dʒ", "j").replace("ŋ", "ng")
-        text = text.replace("ny", "ɲ").replace("ʃ", "sy").replace("x", "kh")
+        text = text.replace("ɲ", "ny").replace("ʃ", "sy").replace("x", "kh")
+        text = text.replace("ɪ", "i").replace("ʊ", "u").replace("ɔ", "o")
+        text = text.replace("ʔ", "k").replace("ə", "e")
         return text
