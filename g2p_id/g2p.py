@@ -156,7 +156,7 @@ class G2P:
             # simple phoneme mapping for double consonant
             word = word.replace("x", "ks").replace("c", "tʃ").replace("j", "dʒ")
             word = word.replace("ng", "ŋ").replace("ny", "ɲ").replace("sy", "ʃ")
-            word = word.replace("kh", "x").replace("v", "f")
+            word = word.replace("kh", "x").replace("v", "f").replace("y", "j")
 
             new_word = word
             syllables = self.to_syllables(word)
@@ -181,6 +181,7 @@ class G2P:
         return self.replace_ranges(text, repls), text_syllable
 
     def to_grapheme(self, text):
+        text = text.replace("j", "y")
         text = text.replace("tʃ", "c").replace("dʒ", "j").replace("ŋ", "ng")
         text = text.replace("ɲ", "ny").replace("ʃ", "sy").replace("x", "kh")
         text = text.replace("ɪ", "i").replace("ʊ", "u").replace("ɔ", "o")
