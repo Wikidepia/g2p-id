@@ -127,21 +127,16 @@ class G2P:
                 raise ValueError("new char?")
         return syllables_ret
 
-    def to_phoneme(self, text, split_abbr=False):
+    def to_phoneme(self, text, expand_abbr=False):
         text_syllable = []
         text = text.lower()
 
-        # simple phoneme mapping for double consonant
-        text = text.replace("x", "ks").replace("c", "tʃ").replace("j", "dʒ")
-        text = text.replace("ng", "ŋ").replace("ny", "ɲ").replace("sy", "ʃ")
-        text = text.replace("kh", "x").replace("v", "f")
-
         repls = []
-        for match_re in re.finditer(r"[a-zŋɲʃʒ]+", text):
+        for match_re in re.finditer(r"[a-z]+", text):
             word = match_re.group()
             # `split_abbr` will expand abbr
             is_abbr = False
-            if split_abbr:
+            if expand_abbr:
                 word_kv = self.kv_from_word(word)
                 is_abbr = not any(p in word_kv for p in self.kv_pattern)
                 if is_abbr:
@@ -157,6 +152,11 @@ class G2P:
                 word = word[:-1] + "ʔ"
             for glot in list(self.glotal_regex.finditer(word)):
                 word = word[:glot.start()+1] + "ʔ" + word[glot.end()-1:]
+
+            # simple phoneme mapping for double consonant
+            word = word.replace("x", "ks").replace("c", "tʃ").replace("j", "dʒ")
+            word = word.replace("ng", "ŋ").replace("ny", "ɲ").replace("sy", "ʃ")
+            word = word.replace("kh", "x").replace("v", "f")
 
             new_word = word
             syllables = self.to_syllables(word)
